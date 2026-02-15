@@ -18,20 +18,14 @@ X_test_scaled = scaler.transform(X_test)
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train_scaled, y_train)
 
-# Slide navigation
-slide = st.sidebar.radio("Navigate Slides", ["Introduction", "Prediction"])
+# Sidebar navigation
+section = st.sidebar.radio("Navigate", ["Prediction", "History", "Analysis"])
 
-if slide == "Introduction":
+# Prediction Section
+if section == "Prediction":
     st.title("Food Packaging Defect Detection")
-    st.write("""
-    Welcome! This app uses machine learning to detect defects in food packaging 
-    based on sealing pressure, machine speed, and product weight.
-    
-    👉 Navigate to the Prediction slide to test your own values.
-    """)
+    st.subheader("Make a Prediction")
 
-elif slide == "Prediction":
-    st.subheader("Try Your Own Values")
     pressure = st.slider("Sealing Pressure", 90, 140, 120)
     speed = st.slider("Machine Speed", 55, 100, 80)
     weight = st.slider("Product Weight", 460, 530, 500)
@@ -42,4 +36,29 @@ elif slide == "Prediction":
     if prediction == 1:
         st.error("⚠️ Defective Package Detected")
     else:
-        st.success("✅ Package is Good") 
+        st.success("✅ Package is Good")
+
+    # Save prediction to history
+    if "history" not in st.session_state:
+        st.session_state["history"] = []
+    st.session_state["history"].append(
+        {"pressure": pressure, "speed": speed, "weight": weight, "result": "Defective" if prediction == 1 else "Good"}
+    )
+
+# History Section
+elif section == "History":
+    st.title("Prediction History")
+    if "history" in st.session_state and st.session_state["history"]:
+        st.table(st.session_state["history"])
+    else:
+        st.info("No predictions made yet.")
+
+# Analysis Section
+elif section == "Analysis":
+    st.title("Analysis of Predictions")
+    if "history" in st.session_state and st.session_state["history"]:
+        history_df = pd.DataFrame(st.session_state["history"])
+        st.write("Distribution of Predictions:")
+        st.bar_chart(history_df["result"].value_counts())
+    else:
+        st.info("No data available for analysis yet.")
