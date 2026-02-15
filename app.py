@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import hashlib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
@@ -12,31 +13,38 @@ USER_FILE = "users.csv"
 if not os.path.exists(USER_FILE):
     pd.DataFrame(columns=["username", "password"]).to_csv(USER_FILE, index=False)
 
-# Load users
+# --- Helper functions ---
+def hash_password(password):
+    """Hash a password using SHA256."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 def load_users():
     return pd.read_csv(USER_FILE)
 
-# Save new user
 def save_user(username, password):
     users = load_users()
     if username in users["username"].values:
         return False  # user already exists
-    users = users.append({"username": username, "password": password}, ignore_index=True)
+    new_user = pd.DataFrame([[username, hash_password(password)]], columns=["username", "password"])
+    users = pd.concat([users, new_user], ignore_index=True)
     users.to_csv(USER_FILE, index=False)
     return True
 
-# Authenticate user
 def authenticate(username, password):
     users = load_users()
-    return ((users["username"] == username) & (users["password"] == password)).any()
+    hashed_pw = hash_password(password)
+    match = users[(users["username"] == username) & (users["password"] == hashed_pw)]
+    return not match.empty
 
 # --- Authentication state ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "current_user" not in st.session_state:
     st.session_state["current_user"] = None
+if "signup" not in st.session_state:
+    st.session_state["signup"] = False
 
-# --- Special users (you + teammate) ---
+# --- Special users (admins) ---
 ADMIN_USERS = ["manne", "teammate"]  # replace with your actual usernames
 
 # --- Login Page ---
@@ -135,9 +143,6 @@ model = RandomForestClassifier(random_state=42)
 model.fit(X_train_scaled, y_train)
 
 # --- Run App ---
-if "signup" not in st.session_state:
-    st.session_state["signup"] = False
-
 if not st.session_state["authenticated"]:
     if st.session_state["signup"]:
         signup_page()
