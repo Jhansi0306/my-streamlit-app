@@ -18,11 +18,21 @@ X_test_scaled = scaler.transform(X_test)
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train_scaled, y_train)
 
-# Sidebar navigation
-section = st.sidebar.radio("Navigate", ["Prediction", "History", "Analysis"])
+# Sidebar navigation (Analysis first, then Prediction, then History)
+section = st.sidebar.radio("Navigate", ["Analysis", "Prediction", "History"])
+
+# Analysis Section
+if section == "Analysis":
+    st.title("Analysis of Predictions")
+    if "history" in st.session_state and st.session_state["history"]:
+        history_df = pd.DataFrame(st.session_state["history"])
+        st.write("Distribution of Predictions:")
+        st.bar_chart(history_df["result"].value_counts())
+    else:
+        st.info("No data available for analysis yet. Make some predictions first!")
 
 # Prediction Section
-if section == "Prediction":
+elif section == "Prediction":
     st.title("Food Packaging Defect Detection")
     st.subheader("Make a Prediction")
 
@@ -52,13 +62,3 @@ elif section == "History":
         st.table(st.session_state["history"])
     else:
         st.info("No predictions made yet.")
-
-# Analysis Section
-elif section == "Analysis":
-    st.title("Analysis of Predictions")
-    if "history" in st.session_state and st.session_state["history"]:
-        history_df = pd.DataFrame(st.session_state["history"])
-        st.write("Distribution of Predictions:")
-        st.bar_chart(history_df["result"].value_counts())
-    else:
-        st.info("No data available for analysis yet.")
