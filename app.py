@@ -72,7 +72,7 @@ def signup_page():
     if st.button("Sign Up"):
         if save_user(new_username, new_password):
             st.success("Account created successfully! Please log in.")
-            st.session_state["signup"] = False
+            st.session_state["signup"] = False  # return to login page
         else:
             st.error("Username already exists. Please choose another.")
 
@@ -90,7 +90,10 @@ def app_dashboard():
         st.success("You have been logged out.")
 
     # Tabs navigation
-    tab1, tab2, tab3 = st.tabs(["Analysis", "Prediction", "History"])
+    if st.session_state["current_user"] in ADMIN_USERS:
+        tab1, tab2, tab3, tab4 = st.tabs(["Analysis", "Prediction", "History", "ADMIN"])
+    else:
+        tab1, tab2, tab3 = st.tabs(["Analysis", "Prediction", "History"])
 
     # Analysis Tab
     with tab1:
@@ -131,6 +134,14 @@ def app_dashboard():
         else:
             st.info("No predictions made yet.")
 
+    # ADMIN Tab (only visible to admins)
+    if st.session_state["current_user"] in ADMIN_USERS:
+        with tab4:
+            st.header("👑 ADMIN Panel")
+            users = load_users()
+            st.write("### Registered Users")
+            st.table(users)
+
 # --- ML Model Setup ---
 data = pd.read_csv("food_packaging_defects.csv")
 X = data[['pressure', 'speed', 'weight']]
@@ -149,8 +160,4 @@ if not st.session_state["authenticated"]:
     else:
         login_page()
 else:
-    # Restrict dashboard access
-    if st.session_state["current_user"] in ADMIN_USERS:
-        app_dashboard()
-    else:
-        st.warning("You are logged in, but only admins can view the dashboard.")
+    app_dashboard()
