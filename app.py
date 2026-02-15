@@ -5,7 +5,7 @@ if not st.session_state["authenticated"]:
     else:
         login_page()
 else:
-    # After login, show dashboard
+    # After login, show dashboard for everyone
     if st.session_state["current_user"] in ADMIN_USERS:
         # Admins see Analysis, Prediction, History, and ADMIN tab
         app_dashboard()
@@ -33,27 +33,4 @@ else:
         with tab2:
             st.header("Make a Prediction")
             pressure = st.slider("Sealing Pressure", 90, 140, 120)
-            speed = st.slider("Machine Speed", 55, 100, 80)
-            weight = st.slider("Product Weight", 460, 530, 500)
-
-            input_data = scaler.transform([[pressure, speed, weight]])
-            prediction = model.predict(input_data)[0]
-
-            if prediction == 1:
-                st.error("⚠️ Defective Package Detected")
-            else:
-                st.success("✅ Package is Good")
-
-            if "history" not in st.session_state:
-                st.session_state["history"] = []
-            st.session_state["history"].append(
-                {"pressure": pressure, "speed": speed, "weight": weight,
-                 "result": "Defective" if prediction == 1 else "Good"}
-            )
-
-        with tab3:
-            st.header("Prediction History")
-            if "history" in st.session_state and st.session_state["history"]:
-                st.table(st.session_state["history"])
-            else:
-                st.info("No predictions made yet.")
+            speed = st.slider
