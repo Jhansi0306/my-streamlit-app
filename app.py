@@ -42,4 +42,4 @@ elif slide == "Prediction":
     if prediction == 1:
         st.error("⚠️ Defective Package Detected")
     else:
-        st.success("✅ Package is Good")
+        st.success("✅ Package is Good") 
