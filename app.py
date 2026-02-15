@@ -18,47 +18,41 @@ X_test_scaled = scaler.transform(X_test)
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train_scaled, y_train)
 
-# Sidebar navigation (Analysis first, then Prediction, then History)
-section = st.sidebar.radio("Navigate", ["Analysis", "Prediction", "History"])
+st.title("📊 Food Packaging Defect Detection Dashboard")
 
-# Analysis Section
-if section == "Analysis":
-    st.title("Analysis of Predictions")
-    if "history" in st.session_state and st.session_state["history"]:
-        history_df = pd.DataFrame(st.session_state["history"])
-        st.write("Distribution of Predictions:")
-        st.bar_chart(history_df["result"].value_counts())
-    else:
-        st.info("No data available for analysis yet. Make some predictions first!")
+# --- Analysis Section ---
+st.header("Analysis of Predictions")
+if "history" in st.session_state and st.session_state["history"]:
+    history_df = pd.DataFrame(st.session_state["history"])
+    st.write("### Distribution of Predictions")
+    st.bar_chart(history_df["result"].value_counts())
+else:
+    st.info("No data available yet. Make some predictions first!")
 
-# Prediction Section
-elif section == "Prediction":
-    st.title("Food Packaging Defect Detection")
-    st.subheader("Make a Prediction")
+# --- Prediction Section ---
+st.header("Make a Prediction")
+pressure = st.slider("Sealing Pressure", 90, 140, 120)
+speed = st.slider("Machine Speed", 55, 100, 80)
+weight = st.slider("Product Weight", 460, 530, 500)
 
-    pressure = st.slider("Sealing Pressure", 90, 140, 120)
-    speed = st.slider("Machine Speed", 55, 100, 80)
-    weight = st.slider("Product Weight", 460, 530, 500)
+input_data = scaler.transform([[pressure, speed, weight]])
+prediction = model.predict(input_data)[0]
 
-    input_data = scaler.transform([[pressure, speed, weight]])
-    prediction = model.predict(input_data)[0]
+if prediction == 1:
+    st.error("⚠️ Defective Package Detected")
+else:
+    st.success("✅ Package is Good")
 
-    if prediction == 1:
-        st.error("⚠️ Defective Package Detected")
-    else:
-        st.success("✅ Package is Good")
+# Save prediction to history
+if "history" not in st.session_state:
+    st.session_state["history"] = []
+st.session_state["history"].append(
+    {"pressure": pressure, "speed": speed, "weight": weight, "result": "Defective" if prediction == 1 else "Good"}
+)
 
-    # Save prediction to history
-    if "history" not in st.session_state:
-        st.session_state["history"] = []
-    st.session_state["history"].append(
-        {"pressure": pressure, "speed": speed, "weight": weight, "result": "Defective" if prediction == 1 else "Good"}
-    )
-
-# History Section
-elif section == "History":
-    st.title("Prediction History")
-    if "history" in st.session_state and st.session_state["history"]:
-        st.table(st.session_state["history"])
-    else:
-        st.info("No predictions made yet.")
+# --- History Section ---
+st.header("Prediction History")
+if "history" in st.session_state and st.session_state["history"]:
+    st.table(st.session_state["history"])
+else:
+    st.info("No predictions made yet.")
