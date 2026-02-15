@@ -1,32 +1,85 @@
 import streamlit as st
 import pandas as pd
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 
-# --- Dummy user database ---
-USER_CREDENTIALS = {
-    "admin": "password123",
-    "user": "mypassword"
-}
+# --- File to store user credentials ---
+USER_FILE = "users.csv"
 
-# --- Authentication ---
+# Initialize user file if not exists
+if not os.path.exists(USER_FILE):
+    pd.DataFrame(columns=["username", "password"]).to_csv(USER_FILE, index=False)
+
+# Load users
+def load_users():
+    return pd.read_csv(USER_FILE)
+
+# Save new user
+def save_user(username, password):
+    users = load_users()
+    if username in users["username"].values:
+        return False  # user already exists
+    users = users.append({"username": username, "password": password}, ignore_index=True)
+    users.to_csv(USER_FILE, index=False)
+    return True
+
+# Authenticate user
+def authenticate(username, password):
+    users = load_users()
+    return ((users["username"] == username) & (users["password"] == password)).any()
+
+# --- Authentication state ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
+if "current_user" not in st.session_state:
+    st.session_state["current_user"] = None
 
-def login():
+# --- Special users (you + teammate) ---
+ADMIN_USERS = ["manne", "teammate"]  # replace with your actual usernames
+
+# --- Login Page ---
+def login_page():
     st.title("🔐 Login to Access the App")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
-        if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
+        if authenticate(username, password):
             st.session_state["authenticated"] = True
+            st.session_state["current_user"] = username
             st.success("Login successful! 🎉")
         else:
             st.error("Invalid username or password")
 
+    st.write("Don't have an account?")
+    if st.button("Go to Sign Up"):
+        st.session_state["signup"] = True
+
+# --- Sign Up Page ---
+def signup_page():
+    st.title("📝 Sign Up")
+    new_username = st.text_input("Choose a Username")
+    new_password = st.text_input("Choose a Password", type="password")
+    if st.button("Sign Up"):
+        if save_user(new_username, new_password):
+            st.success("Account created successfully! Please log in.")
+            st.session_state["signup"] = False
+        else:
+            st.error("Username already exists. Please choose another.")
+
+    if st.button("Back to Login"):
+        st.session_state["signup"] = False
+
+# --- Dashboard ---
 def app_dashboard():
     st.title("📊 Food Packaging Defect Detection Dashboard")
+
+    # Logout button
+    if st.button("Logout"):
+        st.session_state["authenticated"] = False
+        st.session_state["current_user"] = None
+        st.success("You have been logged out.")
 
     # Tabs navigation
     tab1, tab2, tab3 = st.tabs(["Analysis", "Prediction", "History"])
@@ -82,7 +135,17 @@ model = RandomForestClassifier(random_state=42)
 model.fit(X_train_scaled, y_train)
 
 # --- Run App ---
+if "signup" not in st.session_state:
+    st.session_state["signup"] = False
+
 if not st.session_state["authenticated"]:
-    login()
+    if st.session_state["signup"]:
+        signup_page()
+    else:
+        login_page()
 else:
-    app_dashboard()
+    # Restrict dashboard access
+    if st.session_state["current_user"] in ADMIN_USERS:
+        app_dashboard()
+    else:
+        st.warning("You are logged in, but only admins can view the dashboard.")
