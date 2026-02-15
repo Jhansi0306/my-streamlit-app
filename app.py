@@ -1,36 +1,26 @@
-# --- Run App ---
-if not st.session_state["authenticated"]:
-    if st.session_state["signup"]:
-        signup_page()
-    else:
-        login_page()
-else:
-    # After login, show dashboard for everyone
-    if st.session_state["current_user"] in ADMIN_USERS:
-        # Admins see Analysis, Prediction, History, and ADMIN tab
-        app_dashboard()
-    else:
-        # Normal users see Analysis, Prediction, History tabs only
-        st.title("📊 Food Packaging Defect Detection Dashboard")
+import streamlit as st
+import pandas as pd
+import os
+import hashlib
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
 
-        # Logout button
-        if st.button("Logout"):
-            st.session_state["authenticated"] = False
-            st.session_state["current_user"] = None
-            st.success("You have been logged out.")
+# --- Initialize session state safely ---
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "current_user" not in st.session_state:
+    st.session_state["current_user"] = None
+if "signup" not in st.session_state:
+    st.session_state["signup"] = False
+if "history" not in st.session_state:
+    st.session_state["history"] = []
 
-        # Tabs navigation for normal users
-        tab1, tab2, tab3 = st.tabs(["Analysis", "Prediction", "History"])
+# --- File to store user credentials ---
+USER_FILE = "users.csv"
 
-        with tab1:
-            st.header("Analysis of Predictions")
-            if "history" in st.session_state and st.session_state["history"]:
-                history_df = pd.DataFrame(st.session_state["history"])
-                st.bar_chart(history_df["result"].value_counts())
-            else:
-                st.info("No data available yet. Make some predictions first!")
+# Initialize user file if not exists
+if not os.path.exists(USER_FILE):
+    pd.DataFrame(columns=["username", "password"]).to_csv(USER_FILE, index=False)
 
-        with tab2:
-            st.header("Make a Prediction")
-            pressure = st.slider("Sealing Pressure", 90, 140, 120)
-            speed = st.slider
+# (rest of your helper functions and dashboard code here...)
