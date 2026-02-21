@@ -47,13 +47,23 @@ with tab2:
     else:
         st.success("✅ Package is Good")
 
-    # Save prediction to history
+    # Save prediction to history with limit of 15
     if "history" not in st.session_state:
         st.session_state["history"] = []
-    st.session_state["history"].append(
-        {"pressure": pressure, "speed": speed, "weight": weight,
-         "result": "Defective" if prediction == 1 else "Good"}
-    )
+
+    new_entry = {
+        "pressure": pressure,
+        "speed": speed,
+        "weight": weight,
+        "result": "Defective" if prediction == 1 else "Good"
+    }
+
+    # Insert new entry at the top
+    st.session_state["history"].insert(0, new_entry)
+
+    # Keep only the latest 15 entries
+    if len(st.session_state["history"]) > 15:
+        st.session_state["history"] = st.session_state["history"][:15]
 
 # --- History Tab ---
 with tab3:
